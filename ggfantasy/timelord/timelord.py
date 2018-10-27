@@ -1,7 +1,16 @@
+import os
 import time
 import requests
 from datetime import datetime
+from crontab import CronTab
+from util import ROOT_DIR
+
 from pprint import PrettyPrinter
+
+
+
+# Cron job setup
+cron = CronTab(user=True)
 
 # For now, use endpoint to grab leagues
 # But after, it will use the database to check for leagues
@@ -27,7 +36,7 @@ def get_leagues():
 
 def get_upcoming_matches(leagues):
     start = time.time() * 1000
-    end = start + day_to_milliseconds(1)
+    end = start + day_to_milliseconds(7)
 
     upcoming_matches = list()
     for league in leagues:
@@ -37,10 +46,23 @@ def get_upcoming_matches(leagues):
         if status_code < 400:
             for blob in data['schedule']:
                 if blob['startTime'] >= start and blob['startTime'] <= end:
+                    date = datetime.fromtimestamp(blob['startTime']/1000)
+                    # TODO Turn this into Log statements instead of print
                     print('Upcoming Match: {} vs {} for {} at {}'.format(blob['match']['teams']['team1']['name'],
                                                                          blob['match']['teams']['team2']['name'],
                                                                          blob['league']['name'],
-                                                                         datetime.fromtimestamp(blob['startTime'] / 1000)))
+                                                                         date))
+                    # Config for new cron job
+                    command = '{}/venv/bin/python'.format(ROOT_DIR)
+                    job = cron.new(command='{} {}/ggfantasy/refinery/refinery.py'.format(command, ROOT_DIR))
+
+                    # Sets cron job to kick off 30 minutes before game start
+                    job.day.on(date.day)
+                    job.hour.on(date.hour - 1)
+                    job.minute.on(30)
+                    for task in cron:
+                        # TODO Turn this into Log statements instead of print
+                        print(task)
                     upcoming_matches.append(blob)
     return upcoming_matches
 
