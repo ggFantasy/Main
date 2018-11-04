@@ -6,7 +6,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'flask',
-        'requests',
+        'requests>=2.20.0',
         'crontab',
     ]
 )
