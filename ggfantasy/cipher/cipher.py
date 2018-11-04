@@ -1,16 +1,21 @@
-
-import asyncio
-import websockets
-from datetime import datetime
+from base.websocket_server import WebsocketServer
 
 
-async def listen_for_events(websocket, path):
-    async for message in websocket:
-        print("Event {}".format(message))
+class Cipher(WebsocketServer):
+    """
+        Cipher is the gateway between our live stream refinery and our front end
+        It will emit processed data for the front end to consume
+    """
+    BASE_URL = 'localhost'
+    PORT = 9734
+
+    @classmethod
+    async def handler(cls, websocket, path):
+        async for message in websocket:
+            # Where Cipher should be relaying processed data to front end
+            print('Event {}'.format(message))
 
 
 if __name__ == '__main__':
-    start_server = websockets.serve(listen_for_events, 'localhost', 9734)
-
-    asyncio.get_event_loop().run_until_complete(start_server)
-    asyncio.get_event_loop().run_forever()
+    cipher = Cipher()
+    cipher.run()

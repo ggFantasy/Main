@@ -1,81 +1,67 @@
-import os
-import time
-import requests
-from datetime import datetime
 from crontab import CronTab
-from util import ROOT_DIR
 
-from pprint import PrettyPrinter
+from ggfantasy.timelord.jobs.league_enqueuer import LeagueEnqueuer
+from util import Util
+
+"""
+    TimeLord is a cron job manager
+    
+    Functions:
+    If you run the file, you run the script which executes Enqueuers
+    If you call the class, you can add jobs to the manager
+    
+    Ideal Ops:
+    Runs once a day to audit list of jobs to make sure scripts that should be run
+    are in the queue
+"""
+
+JOBS = {
+    'League Enqueuer', LeagueEnqueuer
+}
 
 
+class TimeLord:
+    def __init__(self, job_config={}, user=True):
+        self.cron = CronTab(user=user)
+        if job_config:
+            self.schedule_job(job_config)
 
-# Cron job setup
-cron = CronTab(user=True)
+    def launch(self):
+        for job in JOBS:
+            name, script = job
+            print('Running {}'.format(name))
+            script.run()
 
-# For now, use endpoint to grab leagues
-# But after, it will use the database to check for leagues
-base_url = 'https://prod-api.ewp.gg/'
-leagues_url = '{}ewp-web-api/v1/leagues'.format(base_url)
-schedules_url = '{}ewp-web-api/v1/schedule?leagues=%5B{}%5D'
+    # TODO Add a dry run mode where it hits a fake endpoint to get a schedule
+    def schedule_job(self, job_config):
+        command = '{}/venv/bin/python'.format(Util.get_root_dir())
+        job = self.cron.new(command='{} {}'.format(command, job_config['target']))
 
-printer = PrettyPrinter()
+        date = job_config['date']
+        job.day.on(date.day)
+        job.hour.on(date.hour)
+        job.minute.on(date.minute)
 
-def day_to_milliseconds(days):
-    return days * 24 * 60 * 60 * 1000
+    def get_jobs(self):
+        jobs = list()
+        for job in self.cron:
+            print(job)
+            jobs.append(job)
 
-def get_leagues():
-    resp = requests.get(leagues_url)
-    data, status_code = resp.json(), resp.status_code
-    if status_code < 400:
-        league_ids = list()
-        for league in data['leagues']:
-            # Here it should save id, name, and maybe region to db
-            league_ids.append(league['id'])
+        return jobs
 
-        return league_ids
+    def update_job(self):
+        raise Exception('Not yet implemented')
 
-def get_upcoming_matches(leagues):
-    start = time.time() * 1000
-    end = start + day_to_milliseconds(7)
+    def remove_job(self):
+        raise Exception('Not yet implemented')
 
-    upcoming_matches = list()
-    for league in leagues:
-        url = schedules_url.format(base_url, league)
-        resp = requests.get(url)
-        data, status_code = resp.json(), resp.status_code
-        if status_code < 400:
-            for blob in data['schedule']:
-                if blob['startTime'] >= start and blob['startTime'] <= end:
-                    date = datetime.fromtimestamp(blob['startTime']/1000)
-                    # TODO Turn this into Log statements instead of print
-                    print('Upcoming Match: {} vs {} for {} at {}'.format(blob['match']['teams']['team1']['name'],
-                                                                         blob['match']['teams']['team2']['name'],
-                                                                         blob['league']['name'],
-                                                                         date))
-                    # Config for new cron job
-                    command = '{}/venv/bin/python'.format(ROOT_DIR)
-                    job = cron.new(command='{} {}/ggfantasy/refinery/refinery.py'.format(command, ROOT_DIR))
-
-                    # Sets cron job to kick off 30 minutes before game start
-                    job.day.on(date.day)
-                    job.hour.on(date.hour - 1)
-                    job.minute.on(30)
-                    for task in cron:
-                        # TODO Turn this into Log statements instead of print
-                        print(task)
-                    upcoming_matches.append(blob)
-    return upcoming_matches
-
-def push_to_queue(matches):
-    start_times = list()
-    for match in matches:
-        start_times.append(match['startTime'])
-    # Replace this to push to queue
-    print(start_times)
+    def run_jobs(self):
+        raise Exception('Not yet implemented')
 
 
 if __name__ == "__main__":
     print("Initiating Timelord...")
-    leagues = get_leagues()
-    matches = get_upcoming_matches(leagues)
-    push_to_queue(matches)
+    timelord = TimeLord()
+    timelord.launch()
+    timelord.get_jobs()
