@@ -1,49 +1,42 @@
-import asyncio
-import websockets
 import random
 
+from asyncio import sleep
 from pymongo import MongoClient
-import pprint
+
+from base.websocket_server import WebsocketServer
 
 client = MongoClient('localhost', 27017)
 db = client.ggf_mockup
 collection = db.league_matches
 
 
-
-
-class LeagueMock:
+class LeagueMock(WebsocketServer):
+    """
+        Mock Websocket to emit data from previous live games
+    """
     BASE_URL = 'localhost'
     PORT = '8765'
 
     def __init__(self):
         self.game = None
-        self.websocket = None
         self.connect_to_db()
+        super(LeagueMock, self).__init__()
 
-    def connect_to_db(self):
-        game = open('2018-10-27 01:00:23.390713_raw_data.txt', 'r')
-        print("Game Opened")
-        self.game = game.readlines()
-
-    def run(self):
-        print('Running mock websocket')
-        self.websocket = websockets.serve(self.emit, self.BASE_URL, self.PORT)
-        asyncio.get_event_loop().run_until_complete(self.websocket)
-        asyncio.get_event_loop().run_forever()
-
-    @staticmethod
-    def get_url():
-        return 'ws://{}:{}'.format(LeagueMock.BASE_URL, LeagueMock.PORT)
-
-    async def emit(self, websocket):
+    @classmethod
+    async def handler(cls, websocket, path):
         print("Game Events Emitting")
-        for event in self.game:
+        for event in cls.game:
             print(event)
             await websocket.send(event)
-            await asyncio.sleep(random.random() * 2)
+            await sleep(random.random() * 2)
+
+    @classmethod
+    def connect_to_db(cls):
+        game = open('10_20_18.txt', 'r')
+        print("Game Opened")
+        cls.game = game.readlines()
+
 
 if __name__ == '__main__':
-    pprint.pprint(collection.find_one())
     league_server = LeagueMock()
     league_server.run()
