@@ -5,8 +5,12 @@ from util import Util
 
 """
     TimeLord is a cron job manager
+    
+    Functions:
     If you run the file, you run the script which executes Enqueuers
     If you call the class, you can add jobs to the manager
+    
+    Ideal Ops:
     Runs once a day to audit list of jobs to make sure scripts that should be run
     are in the queue
 """
@@ -28,6 +32,7 @@ class TimeLord:
             print('Running {}'.format(name))
             script.run()
 
+    # TODO Add a dry run mode where it hits a fake endpoint to get a schedule
     def schedule_job(self, job_config):
         command = '{}/venv/bin/python'.format(Util.get_root_dir())
         job = self.cron.new(command='{} {}'.format(command, job_config['target']))
@@ -46,15 +51,13 @@ class TimeLord:
         return jobs
 
     def update_job(self):
-        pass
+        raise Exception('Not yet implemented')
 
     def remove_job(self):
-        pass
+        raise Exception('Not yet implemented')
 
     def run_jobs(self):
-        pass
-
-    pass
+        raise Exception('Not yet implemented')
 
 
 if __name__ == "__main__":
