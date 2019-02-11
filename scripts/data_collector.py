@@ -56,15 +56,13 @@ class DataCollector:
             for bracket_sid, bracket in brackets.items():
                 matches = bracket.get("matches")
                 for match_sid, match in matches.items():
-                    teams = match.get("input")
-                    primary_team_sid = teams[0].get("roster")
-                    secondary_team_sid = teams[1].get("roster")
+                    teams = match.get("name")
+                    primary_team, secondary_team = teams.split("-vs-")
+                    print(primary_team, secondary_team)
                     state = match.get("state")
-
-                    print("state {}".format(state))
                     state_type = 1 if state == "resolved" else 0
 
-                    new_match = Matches(match_sid, tournament_sid, bracket_sid, primary_team_sid, secondary_team_sid, None, state_type, date_created=datetime.utcnow(), date_updated=datetime.utcnow())
+                    new_match = Matches(match_sid, tournament_sid, bracket_sid, primary_team, secondary_team, None, state_type, date_created=datetime.utcnow(), date_updated=datetime.utcnow())
                     Matches.session.add(new_match)
                     Matches.session.commit()
 
@@ -80,6 +78,7 @@ class DataCollector:
             for player in players:
                 self.players.add(player)
 
+            print("Team Sid: {}".format(team_sid))
             exists = self._entity_exists(Teams, "teamSid", team_sid)
             if not exists:
                 new_team = Teams(league_sid, team_sid, slug, friendly_name, acronym, date_created=datetime.utcnow(), date_updated=datetime.utcnow())
@@ -115,11 +114,11 @@ class DataCollector:
     def run(self):
         data = self._fetch_data()
         current_tournaments = self._capture_current_tournaments(data["highlanderTournaments"])
-        # self._collect_matches(current_tournaments)
-        self._collect_teams(data["teams"])
-        print(self.players)
-        tournament_sid = current_tournaments[0]["id"]
-        self._collect_players(tournament_sid)
+        self._collect_matches(current_tournaments)
+        # self._collect_teams(data["teams"])
+        # print(self.players)
+        # tournament_sid = current_tournaments[0]["id"]
+        # self._collect_players(tournament_sid)
 
 
 
