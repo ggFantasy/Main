@@ -13,18 +13,27 @@ import json
 parser = reqparse.RequestParser()
 parser.add_argument("Sid", dest="sid", type=str, required=True)
 
+players_fields = {
+    "leagueSid": fields.String,
+    "slug": fields.String,
+    "friendlyName": fields.String,
+    "roleSlug": fields.String,
+    "primaryTeam": fields.String
+}
+
 teams_fields = {
     "leagueSid": fields.String,
     "teamSid": fields.String,
     "slug": fields.String,
     "friendlyName": fields.String,
     "acronym": fields.String,
+    "players": fields.Nested(players_fields),
     "dateCreated": fields.String,
     "dateUpdated": fields.String
 }
 
 resource_fields = {
-    "matchSid": fields.String(attribute="match_sid"),
+    "matchSid": fields.String,
     "tournamentSid": fields.String,
     "bracketSid": fields.String,
     "primaryTeam": fields.Nested(teams_fields),
@@ -40,10 +49,23 @@ class MatchDetails(Resource):
     def get(self):
         args = parser.parse_args()
         match = Matches.query.filter_by(matchSid=args['sid']).first()
-        primary_team = Teams.query.filter_by(acronym=match.primaryTeam).first()
-        secondary_team = Teams.query.filter_by(acronym=match.secondaryTeam).first()
+
+        primary_team = self._fetch_team(match.primaryTeam)
+        secondary_team = self._fetch_team(match.secondaryTeam)
+
+        primary_players = self._fetch_players(primary_team.leagueSid)
+        secondary_players = self._fetch_players(secondary_team.leagueSid)
+
+        primary_team.players = primary_players
+        secondary_team.players = secondary_players
+
         match.primaryTeam = primary_team
         match.secondaryTeam = secondary_team
-        print(match.primaryTeam, match.secondaryTeam)
-        print(primary_team, secondary_team)
+
         return marshal(match, resource_fields)
+
+    def _fetch_players(self, team_id):
+        return Players.query.filter_by(primaryTeam=team_id).all()
+
+    def _fetch_team(self, acronym):
+        return Teams.query.filter_by(acronym=acronym).first()
