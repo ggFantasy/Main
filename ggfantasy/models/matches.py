@@ -17,6 +17,16 @@ class Matches(Base):
     scheduledTime = Column(DATETIME)
     state = Column(TINYINT)
 
+    KEYS = ["dateCreated",
+            "dateUpdated",
+            "matchSid",
+            "tournamentSid",
+            "bracketSid",
+            "primaryTeam",
+            "secondaryTeam",
+            "scheduledTime",
+            "state"]
+
     def __init__(self,
                  match_sid,
                  tournament_sid,
