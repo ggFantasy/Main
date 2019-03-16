@@ -49,6 +49,7 @@ class MatchDetails(Resource):
     def get(self):
         args = parser.parse_args()
         match = Matches.query.filter_by(matchSid=args['sid']).first()
+        response_obj = self._convert_to_dict(match)
 
         primary_team = self._fetch_team(match.primaryTeam)
         secondary_team = self._fetch_team(match.secondaryTeam)
@@ -59,10 +60,13 @@ class MatchDetails(Resource):
         primary_team.players = primary_players
         secondary_team.players = secondary_players
 
-        match.primaryTeam = primary_team
-        match.secondaryTeam = secondary_team
+        response_obj["primaryTeam"] = primary_team
+        response_obj["secondaryTeam"] = secondary_team
 
-        return marshal(match, resource_fields)
+        return marshal(response_obj, resource_fields)
+
+    def _convert_to_dict(self, match):
+        return {key: getattr(match, key) for key in match.KEYS}
 
     def _fetch_players(self, team_id):
         return Players.query.filter_by(primaryTeam=team_id).all()
