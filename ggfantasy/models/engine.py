@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 engine = create_engine('mysql://ggfantasy:ysatnafgg@localhost/ggfantasy', convert_unicode=True)
 db_session = scoped_session(sessionmaker(autocommit=False,
-                                         autoflush=False,
+                                         autoflush=True,
                                          bind=engine))
 Base = declarative_base()
 Base.query = db_session.query_property()
