@@ -1,0 +1,21 @@
+.PlayerCard {
+    height: 100px;
+}
+
+img {
+    width: 100%;
+}
+
+.icon {
+    display: inline-block;
+    background-color: #3A7734;
+    height: 100px;
+    width: 100px;
+}
+
+.stats {
+    display: inline-block;
+    background-color: #485F6E;
+    height: 100%;
+    vertical-align: top;
+}
